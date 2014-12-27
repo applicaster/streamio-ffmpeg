@@ -2,6 +2,7 @@ require 'bundler'
 Bundler.require
 
 require 'fileutils'
+require 'pry'
 
 FFMPEG.logger = Logger.new(nil)
 
