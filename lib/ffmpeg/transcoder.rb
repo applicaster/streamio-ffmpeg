@@ -33,18 +33,10 @@ module FFMPEG
 
     def run(&block)
       transcode_movie(&block)
-      if @transcoder_options[:validate]
-        validate_output_file(&block)
-        return encoded
-      else
-        return nil
-      end
-    end
-
-    def encoding_succeeded?
-      @errors << "no output file created" and return false unless File.exists?(@output_file)
-      @errors << "encoded file is invalid" and return false unless encoded.valid?
-      true
+      validate_output(&block)
+      return unless @transcoder_options[:validate]
+      validate_output_file(&block)
+      encoded
     end
 
     def encoded
@@ -88,15 +80,42 @@ module FFMPEG
       end
     end
 
-    def validate_output_file(&block)
-      if encoding_succeeded?
-        yield(1.0) if block_given?
-        FFMPEG.logger.info "Transcoding of #{@movie.path} to #{@output_file} succeeded\n"
+    def encoding_file_valid?
+      @errors << "no output file created" and return false unless File.exists?(@output_file)
+      @errors << "encoded file is invalid" and return false unless encoded.valid?
+      true
+    end
+
+    def output_valid?
+      @errors << "conversion failed" and return false if output.match(/Conversion failed!/)
+      true
+    end
+
+    def validate_output(&block)
+      if output_valid?
+        success(&block)
       else
-        errors = "Errors: #{@errors.join(", ")}. "
-        FFMPEG.logger.error "Failed encoding...\n#{@command}\n\n#{@output}\n#{errors}\n"
-        raise Error, "Failed encoding.#{errors}Full output: #{@output}"
+        failure
       end
+    end
+
+    def validate_output_file(&block)
+      if encoding_file_valid?
+        success(&block)
+      else
+        failure
+      end
+    end
+
+    def success(&block)
+      yield(1.0) if block_given?
+      FFMPEG.logger.info "Transcoding of #{@movie.path} to #{@output_file} succeeded\n"
+    end
+
+    def failure
+      errors = "Errors: #{@errors.join(", ")}. "
+      FFMPEG.logger.error "Failed encoding...\n#{@command}\n\n#{output}\n#{errors}\n"
+      raise Error, "Failed encoding.#{errors}Full output: #{output}"
     end
 
     def apply_transcoder_options
@@ -122,6 +141,10 @@ module FFMPEG
       output[/test/]
     rescue ArgumentError
       output.force_encoding("ISO-8859-1")
+    end
+
+    def output
+      @output
     end
   end
 end

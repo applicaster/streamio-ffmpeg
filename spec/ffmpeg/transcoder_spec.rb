@@ -155,13 +155,6 @@ module FFMPEG
 
         pending "should not crash on ISO-8859-1 characters (dont know how to spec this)"
 
-        it "should fail when given an invalid movie" do
-          FFMPEG.logger.should_receive(:error)
-          movie = Movie.new(__FILE__)
-          transcoder = Transcoder.new(movie, "#{tmp_path}/fail.flv")
-          expect { transcoder.run }.to raise_error(FFMPEG::Error, /no output file created/)
-        end
-
         it "should encode to the specified duration if given" do
           encoded = Transcoder.new(movie, "#{tmp_path}/durationalized.mp4", duration: 2).run
 
@@ -208,22 +201,49 @@ module FFMPEG
       end
     end
 
-    context "with :validate => false set as transcoding_options" do
-      let(:transcoder) { Transcoder.new(movie, "tmp.mp4", {},{:validate => false}) }
+    context "validations" do
+      let(:movie) { Movie.new(__FILE__) }
 
-      before { transcoder.stub(:transcode_movie) }
+      before do
+        expect(FFMPEG.logger).to receive(:error)
+      end
+
+      context "on invalid movie" do
+        let(:transcoder) { Transcoder.new(movie, "#{tmp_path}/fail.flv") }
+
+        it "raise" do
+          expect { transcoder.run }.to raise_error(FFMPEG::Error, /no output file created/)
+        end
+      end
+
+      context "on failed conversion" do
+        let(:transcoder) { Transcoder.new(movie, "#{tmp_path}/awesome.flv") }
+        let(:fake_output) do
+          File.read("#{fixture_path}/outputs/failed_conversion.txt")
+        end
+
+        before do
+          allow(transcoder).to receive(:output) { fake_output }
+        end
+
+        it "raise" do
+          expect { transcoder.run }.to raise_error(FFMPEG::Error, /conversion failed/)
+        end
+      end
+    end
+
+    context "with validate: false set as transcoding_options" do
+      let(:transcoder) { Transcoder.new(movie, "#{tmp_path}/tmp.mp4", {},{ validate: false }) }
+
       after { FileUtils.rm_f "#{tmp_path}/tmp.mp4" }
 
-      it "should not validate the movie output" do
-        transcoder.should_not_receive(:validate_output_file)
-        transcoder.stub(:encoded)
+      it "will not validate the movie output" do
+        expect(transcoder).to_not receive(:validate_output_file)
         transcoder.run
       end
 
-      it "should not return Movie object" do
-        transcoder.stub(:validate_output_file)
-        transcoder.should_not_receive(:encoded)
-        transcoder.run.should == nil
+      it "will not return Movie object" do
+        expect(transcoder.run).to eq(nil)
       end
     end
   end
