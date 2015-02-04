@@ -1,0 +1,9 @@
+[mpegts @ 0x309dde0] H.264 bitstream error, startcode missing, size 16 data 00000109
+[mpegts @ 0x309dde0] H.264 bitstream error, startcode missing, size 16 data 00000109
+[mpegts @ 0x309dde0] H.264 bitstream error, startcode missing, size 16 data 00000109
+[mpegts @ 0x309dde0] H.264 bitstream malformed, no startcode found, use the video bitstream filter 'h264_mp4toannexb' to fix it ('-bsf:v h264_mp4toannexb' option with ffmpeg)
+av_interleaved_write_frame(): Invalid data found when processing input
+[mpegts @ 0x309dde0] H.264 bitstream error, startcode missing, size 16 data 00000109
+frame= 1761 fps=0.0 q=-1.0 Lsize=N/A time=00:01:10.46 bitrate=N/A    
+video:1749kB audio:453kB subtitle:0kB other streams:0kB global headers:0kB muxing overhead: unknown
+Conversion failed!
