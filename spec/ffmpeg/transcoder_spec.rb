@@ -159,7 +159,7 @@ module FFMPEG
           FFMPEG.logger.should_receive(:error)
           movie = Movie.new(__FILE__)
           transcoder = Transcoder.new(movie, "#{tmp_path}/fail.flv")
-          expect { transcoder.run }.to raise_error(FFMPEG::Error, /no output file created/)
+          expect { transcoder.run }.to raise_error(FFMPEG::Error, /Process failed/)
         end
 
         it "should encode to the specified duration if given" do
@@ -205,25 +205,6 @@ module FFMPEG
             FFMPEG.ffmpeg_binary = @original_ffmpeg_binary
           end
         end
-      end
-    end
-
-    context "with :validate => false set as transcoding_options" do
-      let(:transcoder) { Transcoder.new(movie, "tmp.mp4", {},{:validate => false}) }
-
-      before { transcoder.stub(:transcode_movie) }
-      after { FileUtils.rm_f "#{tmp_path}/tmp.mp4" }
-
-      it "should not validate the movie output" do
-        transcoder.should_not_receive(:validate_output_file)
-        transcoder.stub(:encoded)
-        transcoder.run
-      end
-
-      it "should not return Movie object" do
-        transcoder.stub(:validate_output_file)
-        transcoder.should_not_receive(:encoded)
-        transcoder.run.should == nil
       end
     end
   end
